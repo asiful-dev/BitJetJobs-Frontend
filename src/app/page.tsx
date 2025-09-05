@@ -1,103 +1,154 @@
+"use client";
+
+import { useState } from 'react';
 import Image from "next/image";
+import { OnboardingLayout } from '@/components/ui/OnboardingLayout';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+
+// Data interfaces
+interface RightSideContent {
+  title: string;
+  subtitle: string;
+  bulletPoints: { title: string; description: string }[];
+  buttonText: string;
+}
+
+// Data for the Job Seeker view
+const jobSeekerContent: RightSideContent = {
+  title: "Ready to Land Your Dream Job in Aviation?",
+  subtitle: "Take your aviation career to new heights with exclusive, verified job opportunities.",
+  bulletPoints: [
+    {
+      title: "Exclusive Listings",
+      description: "Manually-validated jobs from over 500 qualified employers.",
+    },
+    {
+      title: "Easy Application Process",
+      description: "Apply directly with a streamlined process.",
+    },
+    {
+      title: "Connect with Leading Employers",
+      description: "Build direct relationships through our flight department directory.",
+    },
+  ],
+  buttonText: "Get Started",
+};
+
+// Data for the Employer view
+const employerContent: RightSideContent = {
+  title: "Find Top Aviation Talent for Your Business",
+  subtitle: "Reach pre-screened aviation professionals and streamline your hiring process.",
+  bulletPoints: [
+    {
+      title: "Targeted Aviation Candidates",
+      description: "Access to the largest pool of industry-specific talent.",
+    },
+    {
+      title: "Efficient Hiring Tools",
+      description: "Manage applications with ease and save time.",
+    },
+    {
+      title: "Flexible Plans for All Needs",
+      description: "Choose a plan that fits your hiring goals.",
+    },
+  ],
+  buttonText: "Get Started",
+};
+
+// Content for the left hero section
+const leftHeroContent = {
+  mainTitle: "Welcome to BizJetJobs. Where Talent and Opportunity Meet.",
+  description: "Whether you're here to hire or to find your next role, let's get started.",
+};
+
+const RightSide = ({ content, onSwitchView, isJobSeeker }: { content: RightSideContent; onSwitchView: (e: React.MouseEvent<HTMLAnchorElement>) => void; isJobSeeker: boolean }) => {
+  return (
+    <div className="flex flex-col space-y-8 max-w-lg mx-auto md:max-w-none">
+      {/* Top header with logo and links */}
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex-shrink-0">
+          <Image
+            src={"/logo.svg"} // Make sure this file exists in your public folder
+            alt="BizJetJobs Logo"
+            width={200}
+            height={40}
+            priority
+          />
+        </div>
+        {/* Dynamically render header links based on the view */}
+        <div className='flex flex-col gap-y-2 md:flex-row '>
+          {isJobSeeker ? (
+            <span className="text-sm md:text-xl font-semibold text-gray-700 flex flex-col gap-1 md:flex-row">
+              Employer? <Link href="#" className="text-primary hover:underline" onClick={onSwitchView}>Sign up here</Link>
+            </span>
+          ) : (
+            <span className="text-sm md:text-xl font-semibold text-gray-700 flex flex-col gap-y-2 md:flex-row">
+              Job Seeker? <Link href="#" className="text-primary hover:underline" onClick={onSwitchView}>Sign up here</Link>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Main content section */}
+      <div className="flex flex-col mt-5">
+        <div className="text-xl  font-semibold uppercase">Sign up</div>
+        <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tighter my-2">
+          {content.title}
+        </h1>
+        <div className="flex flex-col space-y-4">
+          <p className="text-xl font-bold text-gray-600">Already a member? <Link href="#" className="text-primary hover:underline">Log in</Link></p>
+          <p className="text-2xl text-gray-600">
+            {content.subtitle}
+          </p>
+        </div>
+      </div>
+
+      {/* Bullet points section */}
+      <ul className="list-none space-y-6 text-gray-700 mt-6">
+        {content.bulletPoints.map((point, index) => (
+          <li key={index} className="flex flex-col">
+            <span className="flex items-center font-bold mb-1 text-xl">
+              {point.title}
+            </span>
+            <p className=" text-gray-500 text-lg">
+              {point.description}
+            </p>
+          </li>
+        ))}
+      </ul>
+
+      <div className='flex flex-col gap-y-2'>
+        {/* Button */}
+        <Button className="w-48 mt-8 p-7  text-xl font-bold bg-primary hover:bg-primary/90 rounded-lg shadow-md">
+          {content.buttonText}
+        </Button>
+
+        {/* Price text */}
+        <p className="text-xl text-gray-500">
+          Starting at <span className='font-bold'>$10.75</span> a month with an annual subscription
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  // State is now managed here in the parent component
+  const [isJobSeeker, setIsJobSeeker] = useState(true);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+  const handleSwitchView = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault(); // Prevents the page from reloading
+    setIsJobSeeker(!isJobSeeker);
+  };
+
+  return (
+    <OnboardingLayout leftContent={leftHeroContent}>
+      <RightSide
+        content={isJobSeeker ? jobSeekerContent : employerContent}
+        onSwitchView={handleSwitchView}
+        isJobSeeker={isJobSeeker}
+      />
+    </OnboardingLayout>
   );
 }
