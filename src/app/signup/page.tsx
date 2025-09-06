@@ -8,8 +8,9 @@ import { OnboardingLayout } from '@/components/ui/OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
+import { useFormContext } from '../contexts/FormContext';
+import { Eye, EyeOff } from 'lucide-react'; // Import the icons
 
 // Zod schemas for validation
 const passwordSchema = z.string()
@@ -39,7 +40,6 @@ const employerSchema = z.object({
     message: "Passwords do not match",
     path: ["confirmPassword"],
 });
-
 
 
 // Data for left side content based on user role
@@ -103,8 +103,13 @@ const employerCreateAccountContent = {
 
 // A reusable component for the form itself
 const FormContainer = ({ content, isJobSeeker }) => {
+    const { setFormState } = useFormContext();
     const [termsAccepted, setTermsAccepted] = useState(false);
-    const router = useRouter(); // Initialize the router
+    const router = useRouter();
+
+    const [passwordVisible, setPasswordVisible] = useState(false);
+    const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+    const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
 
     const schema = isJobSeeker ? jobSeekerSchema : employerSchema;
     const { register, handleSubmit, watch, formState: { errors } } = useForm({
@@ -135,8 +140,13 @@ const FormContainer = ({ content, isJobSeeker }) => {
             console.log("Terms and conditions not accepted.");
             return;
         }
-        console.log("Form data submitted:", data);
-        // Navigate to the personalize page after successful submission
+        
+        setFormState(prevState => ({
+            ...prevState,
+            data: data,
+            isJobSeeker: isJobSeeker
+        }));
+        
         router.push('/personalize');
     };
 
@@ -177,8 +187,6 @@ const FormContainer = ({ content, isJobSeeker }) => {
         </li>
     );
 
-    const isFormValid = Object.keys(errors).length === 0 && termsAccepted;
-
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col space-y-8 max-w-lg mx-auto md:max-w-none w-full">
             <div className="flex justify-between items-center mb-8">
@@ -202,13 +210,38 @@ const FormContainer = ({ content, isJobSeeker }) => {
             <div className='w-full flex flex-col items-end md:flex-row gap-6'>
                 <div className="flex flex-col space-y-4 flex-1">
                     {content.inputs.map((input, index) => (
-                        <div key={index}>
+                        <div key={index} className="relative">
                             <input
-                                type={input.type}
+                                type={
+                                    input.name === 'password'
+                                    ? (passwordVisible ? 'text' : 'password')
+                                    : input.name === 'confirmPassword'
+                                    ? (confirmPasswordVisible ? 'text' : 'password')
+                                    : input.type
+                                }
                                 placeholder={input.placeholder}
                                 {...register(input.name)}
-                                className="w-full p-4 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full p-4 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                                
                             />
+                            {(input.name === 'password') && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPasswordVisible(!passwordVisible)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
+                                >
+                                    {passwordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
+                            )}
+                            {(input.name === 'confirmPassword' && confirmPasswordFocused) && (
+                                <button
+                                    type="button"
+                                    onClick={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500"
+                                >
+                                    {confirmPasswordVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
+                            )}
                             {errors[input.name] && (
                                 <p className="text-red-500 text-sm mt-1">{String(errors[input.name]?.message)}</p>
                             )}
@@ -254,6 +287,7 @@ const FormContainer = ({ content, isJobSeeker }) => {
 export default function SignupPage() {
     const [isJobSeeker, setIsJobSeeker] = useState(true);
     const [currentStep] = useState(1);
+    const router = useRouter();
 
     useEffect(() => {
         if (typeof window !== 'undefined') {

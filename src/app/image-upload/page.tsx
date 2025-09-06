@@ -5,6 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { OnboardingLayout } from '@/components/ui/OnboardingLayout';
 import Image from 'next/image';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { useFormContext } from "../contexts/FormContext";
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 // A self-contained OnboardingLayout component
 interface LeftContent {
@@ -19,7 +24,6 @@ interface OnboardingLayoutProps {
     leftContent: LeftContent;
     children: React.ReactNode;
 }
-
 
 
 // Data for left side content based on user role
@@ -41,8 +45,17 @@ const employerLeftContent: LeftContent = {
     ],
 };
 
+// Mimic the UserRole enum from the backend for consistency
+enum UserRole {
+    JOB_SEEKER = "JOB_SEEKER",
+    EMPLOYER = "EMPLOYER"
+}
+
+
 // Main component for the image upload page
 export default function ImageUploadPage() {
+    const router = useRouter();
+    const { formState, setFormState } = useFormContext();
     const [isJobSeeker, setIsJobSeeker] = useState<boolean>(true);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +70,15 @@ export default function ImageUploadPage() {
                 setIsJobSeeker(true);
             }
         }
-    }, []);
+        // Load image from context on initial render
+        if (formState.profileImage) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(formState.profileImage);
+        }
+    }, [formState.profileImage]);
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -67,19 +88,80 @@ export default function ImageUploadPage() {
                 setImagePreview(reader.result as string);
             };
             reader.readAsDataURL(file);
+            // Update the context with the file
+            setFormState(prevState => ({ ...prevState, profileImage: file }));
         } else {
             setImagePreview(null);
+            setFormState(prevState => ({ ...prevState, profileImage: null }));
+        }
+    };
+    const handleImageUploadSubmit = async () => {
+        // Now, we'll check for the file object directly from the form state.
+        if (!formState.profileImage) {
+            toast.warning("Please select an image before proceeding.", {
+                description: "You can skip this step if you don't want to upload an image now."
+            });
+            return;
+        }
+
+        const url = 'http://localhost:3000/auth/register';
+
+        // Check if formState.data exists to avoid runtime errors
+        if (!formState.data) {
+            toast.error("Form data is missing. Please go back and fill out the previous steps.");
+            return;
+        }
+
+        try {
+            // Step 1: Create a new FormData object.
+            const formData = new FormData();
+
+            // Step 2: Append all the form data to the FormData object.
+            // This is how you send text fields along with the file.
+            formData.append('name', formState.data.name);
+            formData.append('email', formState.data.email);
+            formData.append('password', formState.data.password);
+            formData.append('phone', (formState.data.phone) ? formState.data.phone : '');
+            formData.append('role', formState.isJobSeeker ? UserRole.JOB_SEEKER : UserRole.EMPLOYER);
+
+            // Step 3: Append the file itself to the FormData object.
+            // This is the correct way to pass the file, as it aligns with your Multer-based backend.
+            // The key 'profileImage' must match the @UploadedFile() decorator argument in your NestJS controller.
+            formData.append('profileImage', formState.profileImage);
+
+            console.log("Sending data:", formData);
+
+            // Step 4: Use axios to send the FormData object.
+            // Axios will automatically set the 'Content-Type' header to 'multipart/form-data'.
+            const response = await axios.post(url, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+
+            toast.success("Registration successful! Navigating to the next step.", {
+                style: {
+                    fontSize: '20px',
+                }
+            });
+
+            if (isJobSeeker) {
+                // The `useRouter` hook is not supported, so a basic redirect is used.
+                window.location.href = "/subscription";
+            } else {
+                window.location.href = "/subscription";
+            }
+        } catch (error) {
+            console.error("Registration failed:", error);
+            if (axios.isAxiosError(error) && error.response) {
+                console.error("Server response:", error.response.data);
+                toast.error(`Registration failed: ${error.response.data.message || 'Server error'}`);
+            } else {
+                toast.error("Registration failed. Please try again.");
+            }
         }
     };
 
-    const handleImageUploadSubmit = () => {
-        if (!imagePreview) {
-            alert("Please select an image to upload.");
-            return;
-        }
-        console.log("Image uploaded. Navigating to the next step.");
-        // In a real app, you would send the image to your backend here
-    };
 
     const handleButtonClick = () => {
         fileInputRef.current?.click();
@@ -94,7 +176,7 @@ export default function ImageUploadPage() {
             {/* Progress bar and step indicator */}
             <div className="absolute top-12 right-12 z-10 flex flex-col items-end">
                 <div className="text-sm text-gray-500 mb-2">
-                    Step {currentStep} of {totalSteps} - Next: {isJobSeeker ? "Aircraft Experience" : "Company Photo"}
+                    Step {currentStep} of {totalSteps} - Next: {isJobSeeker ? "Aircraft Experience" : "Payment"}
                 </div>
                 <Progress value={currentProgress} className="w-48" />
             </div>
@@ -113,8 +195,13 @@ export default function ImageUploadPage() {
                     <h1 className="text-4xl md:text-5xl font-extrabold leading-tight tracking-tighter my-2">
                         {isJobSeeker ? "Add Your Profile Picture" : "Upload Your Company Logo"}
                     </h1>
-                    <p className="text-gray-500 mb-6">
+                    <p className="text-gray-500 mb-6 flex gap-3">
                         This will be used as your {isJobSeeker ? "profile picture" : "company logo"}.
+                        <span className='font-bold hover:underline'>
+                            <Link href={isJobSeeker ? "/subscription" : "/subscription"}>
+                                Skip for now
+                            </Link>
+                        </span>
                     </p>
                 </div>
 
@@ -213,6 +300,3 @@ const CheckboxPrimitive = React.forwardRef<
         )}
     </button>
 ));
-CheckboxPrimitive.displayName = "CheckboxPrimitive";
-
-const CheckboxComponent = CheckboxPrimitive;

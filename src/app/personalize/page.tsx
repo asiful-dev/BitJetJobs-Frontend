@@ -25,11 +25,12 @@ import {
 import { Circle, CircleCheckBigIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import the useRouter hook
+import { useRouter } from 'next/navigation';
+import { useFormContext } from "../contexts/FormContext";
 
 // Zod schemas for validation
 const jobSeekerSchema = z.object({
-    roles: z.string().min(1, "Please select a role."), // Changed to string for Select component
+    roles: z.string().min(1, "Please select a role."),
     workTypes: z.array(z.string()).min(1, "Please select at least one work type."),
 });
 
@@ -112,7 +113,7 @@ const employerLeftContent: LeftContent = {
 // Form content for the 'Personalize' step
 const jobSeekerFormContent = {
     title: "Personalize your experience",
-    roles: ["Pilot", "Flight Attendant", "Aviation Manager"], // Example roles
+    roles: ["Pilot", "Flight Attendant", "Aviation Manager"],
     workTypes: ["Full-Time", "Part-Time", "Contract"],
 };
 
@@ -124,7 +125,8 @@ const employerFormContent = {
 
 // A reusable component for the form itself
 const FormContainer = ({ content, isJobSeeker }: { content: any, isJobSeeker: boolean }) => {
-    const router = useRouter(); // Initialize the router
+    const router = useRouter();
+    const { formState, setFormState } = useFormContext(); // Use the FormContext
     const schema = isJobSeeker ? jobSeekerSchema : employerSchema;
     const form = useForm<JobSeekerFormValues | EmployerFormValues>({
         resolver: zodResolver(schema),
@@ -133,9 +135,21 @@ const FormContainer = ({ content, isJobSeeker }: { content: any, isJobSeeker: bo
 
     const onSubmit = (data: any) => {
         console.log("Form data submitted:", data);
-        // Navigate to the image upload page after successful form validation
+        // Update the formState with the new data
+        setFormState((prevState) => ({
+            ...prevState,
+            data: { ...prevState.data, ...data },
+        }));
         router.push('/image-upload');
     };
+
+    useEffect(() => {
+        // Set default values from context on component load
+        if (formState.data) {
+            form.reset(formState.data);
+        }
+    }, [formState.data, form]);
+
 
     return (
         <Form {...form}>
