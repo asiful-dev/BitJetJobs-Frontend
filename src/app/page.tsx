@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from "next/image";
 import { OnboardingLayout } from '@/components/ui/OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 // Data interfaces
 interface RightSideContent {
@@ -120,8 +121,11 @@ const RightSide = ({ content, onSwitchView, isJobSeeker }: { content: RightSideC
 
       <div className='flex flex-col gap-y-2'>
         {/* Button */}
-        <Button className="w-48 mt-8 p-7  text-xl font-bold bg-primary hover:bg-primary/90 rounded-lg shadow-md">
-          {content.buttonText}
+        <Button className="w-48 mt-8 p-7 cursor-pointer text-xl font-bold bg-primary hover:bg-primary/90 rounded-lg shadow-md">
+
+          <Link href="/signup">
+            {content.buttonText}
+          </Link>
         </Button>
 
         {/* Price text */}
@@ -134,13 +138,31 @@ const RightSide = ({ content, onSwitchView, isJobSeeker }: { content: RightSideC
 };
 
 export default function Home() {
-  // State is now managed here in the parent component
+  // const router = useRouter();
   const [isJobSeeker, setIsJobSeeker] = useState(true);
+
+  useEffect(() => {
+    // Load the stored role from localStorage on component mount
+    if (typeof window !== 'undefined') {
+      const storedRole = localStorage.getItem('user_role');
+      console.log(storedRole);
+      
+      if (storedRole === 'employer') {
+        setIsJobSeeker(false);
+      }
+    }
+  }, []);
 
   const handleSwitchView = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault(); // Prevents the page from reloading
-    setIsJobSeeker(!isJobSeeker);
+    const newIsJobSeeker = !isJobSeeker;
+    setIsJobSeeker(newIsJobSeeker);
+    // Save the new role to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_role', newIsJobSeeker ? 'job_seeker' : 'employer');
+    }
   };
+
 
   return (
     <OnboardingLayout leftContent={leftHeroContent}>

@@ -1,8 +1,14 @@
 "use client"
 
+import { CircleCheckBig } from "lucide-react";
+
 interface LeftContent {
     mainTitle: string;
-    description: string;
+    description?: string;
+    bulletPoints?: string[],
+    author?: string,
+    company?: string
+
 }
 interface OnboardingLayoutProps {
     leftContent: LeftContent;
@@ -17,9 +23,27 @@ export function OnboardingLayout({ leftContent, children }: OnboardingLayoutProp
                 <h1 className="text-3xl md:text-5xl font-bold mt-4 mb-2 leading-tight">
                     {leftContent.mainTitle}
                 </h1>
-                <p className="text-gray-300 mt-4 text-xl font-semibold">
-                    {leftContent.description}
-                </p>
+
+                {
+                    leftContent.description && <p className="text-gray-300 mt-4 text-xl font-semibold">
+                        {leftContent.description}
+                    </p>
+                }
+                {
+                    leftContent.bulletPoints && <ul>
+                        {
+                            leftContent.bulletPoints?.map((item) => <li key={item} className="flex gap-3 mt-3 text-xl ">
+                                <CircleCheckBig className="text-green-500" /> {item}
+                            </li>)
+                        }
+                    </ul>
+                }
+                {
+                    leftContent.author && <h1 className="text-xl">{leftContent.author}</h1>
+                }
+                {
+                    leftContent.company && <h1 className="text-xl">{leftContent.company}</h1>
+                }
             </div>
             {/* Right dynamic section */}
             <div className="flex-grow p-8 md:p-12  bg-white">
